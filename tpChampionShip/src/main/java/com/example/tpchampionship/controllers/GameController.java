@@ -7,6 +7,7 @@ import com.example.tpchampionship.models.Team;
 import com.example.tpchampionship.repository.ChampionShipRepository;
 import com.example.tpchampionship.repository.DayRepository;
 import com.example.tpchampionship.repository.GameRepository;
+import com.example.tpchampionship.repository.TeamRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -30,6 +31,9 @@ public class GameController {
 
     @Autowired
     DayRepository dayRepository;
+
+    @Autowired
+    TeamRepository teamRepository;
 
     @GetMapping("/games")
     public ResponseEntity<List<Game>> getAllGames()
@@ -69,6 +73,31 @@ public class GameController {
             // Enregistrer le jeu dans la base de données
             Game newGame = gameRepository.save(game);
             return new ResponseEntity<>(newGame, HttpStatus.CREATED);
+        } catch (Exception e) {
+            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @PostMapping("/games/{gameId}/teams")
+    public ResponseEntity<Game> addTeamsToGame(
+            @PathVariable("gameId") Long gameId,
+            @RequestParam("team1Id") Long team1Id,
+            @RequestParam("team2Id") Long team2Id) {
+        try {
+            Game game = gameRepository.findById(gameId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Game not found with id: " + gameId));
+
+            Team team1 = teamRepository.findById(team1Id)
+                    .orElseThrow(() -> new ResourceNotFoundException("Team not found with id: " + team1Id));
+
+            Team team2 = teamRepository.findById(team2Id)
+                    .orElseThrow(() -> new ResourceNotFoundException("Team not found with id: " + team2Id));
+
+            game.setTeam1(team1);
+            game.setTeam2(team2);
+
+            Game updatedGame = gameRepository.save(game);
+            return new ResponseEntity<>(updatedGame, HttpStatus.CREATED);
         } catch (Exception e) {
             return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
         }

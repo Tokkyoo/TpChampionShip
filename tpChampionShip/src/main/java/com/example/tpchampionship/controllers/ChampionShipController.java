@@ -3,7 +3,9 @@ package com.example.tpchampionship.controllers;
 
 import com.example.tpchampionship.exception.ResourceNotFoundException;
 import com.example.tpchampionship.models.Championship;
+import com.example.tpchampionship.models.Day;
 import com.example.tpchampionship.repository.ChampionShipRepository;
+import com.example.tpchampionship.repository.DayRepository;
 import com.example.tpchampionship.repository.TeamRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -21,6 +23,9 @@ public class ChampionShipController {
 
     @Autowired
     ChampionShipRepository championShipRepository;
+
+    @Autowired
+    DayRepository dayRepository;
 
     @GetMapping("/championships")
     public ResponseEntity<List<Championship>> getAllChampionships(@RequestParam(required = false) String name){
@@ -67,6 +72,21 @@ public class ChampionShipController {
         _championship.setDrawPoint(championship.getDrawPoint());
 
         return new ResponseEntity<>(championShipRepository.save(_championship), HttpStatus.OK);
+    }
+    @PostMapping("/championships/{championshipId}/days")
+    public ResponseEntity<Day> addDayToChampionship(
+            @PathVariable("championshipId") Long championshipId,
+            @RequestBody Day day) {
+        try {
+            Championship championship = championShipRepository.findById(championshipId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Championship not found with id: " + championshipId));
+
+            day.setChampionship(championship);
+            Day newDay = dayRepository.save(day);
+            return new ResponseEntity<>(newDay, HttpStatus.CREATED);
+        } catch (Exception e) {
+            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
 
